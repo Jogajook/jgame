@@ -174,11 +174,11 @@ function Game() {
     hitAudioRef.current.play();
   }, []);
 
-  useEffect(() => {
-    document.body.style.backgroundImage = `url(${process.env.PUBLIC_URL}/bg2.jpg)`;
-    document.body.style.backgroundSize = '100%';
-    // startGame();
-  }, []);
+  // useEffect(() => {
+  //   document.body.style.backgroundImage = `url(${process.env.PUBLIC_URL}/bg2.jpg)`;
+  //   document.body.style.backgroundSize = '100%';
+  //   // startGame();
+  // }, []);
 
   const isRightEnd = useCallback((x) => {
     return x === itemsCountX - 1;
