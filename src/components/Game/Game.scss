@@ -1,0 +1,104 @@
+.gameWrapper {
+  display: flex;
+  justify-content: center;
+
+  .modalBg {
+    position: absolute;
+    width: 100%;
+    // border: 2px solid purple;
+    height: 100%;
+    vertical-align: middle;
+    background: rgba(78, 81, 117, 0.3);
+    z-index: 100;
+
+    .modal {
+      background-color: white;
+      border: 4px solid #254791;
+      width: 400px;
+      margin: 0 auto;
+      margin-top: 100px;
+      // height: 36%;
+      padding: 30px;
+      box-shadow: 0 2px 24px 15px rgb(255, 255, 255);
+      h4 {
+				font-size: 200%;
+        background: -webkit-linear-gradient(#f99101, #182fff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    }
+  }
+
+  .btn {
+    padding: 10px;
+    cursor: pointer;
+    margin: 10px;
+    background: linear-gradient(#ff9800, #ae350e);
+    color: white;
+    font-size: 150%;
+    border: 2px solid green;
+  }
+
+  .gameWrapper__inner {
+    position: relative;
+    display: flex;
+    justify-content: center;
+
+		.gameCover {
+			width: 300px;
+		}
+
+    .gameState {
+			
+      &--notStarted {
+        padding: 50px;
+
+				.btn {
+					margin: 0;
+				}
+      }
+    }
+
+    .dashboard {
+      width: 200px;
+			background: rgba(78, 81, 117, 0.3);
+      .btn {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+			&__score {
+				font-size: 100px;
+				color: white;
+			}
+    }
+
+    .craftCover {
+      position: absolute;
+    }
+
+    .game__row {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      .head {
+				// background-color: #f99101;
+      }
+      .craftFire {
+        background-size: 100%;
+      }
+      .enemyFire {
+        background-size: 100%;
+      }
+      .enemyPoint {
+        background-size: cover;
+      }
+      .enemyFire:not(.enemyPoint):not(.head) {
+      }
+      .game__col {
+        // border: 1px solid black;
+      }
+    }
+  }
+}
