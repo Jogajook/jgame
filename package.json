@@ -15,7 +15,7 @@
   },
   "scripts": {
     "start": "PORT=4500 HTTPS=true react-scripts start",
-    "build": "PORT=\"\" react-scripts build && mv build docs",
+    "build": "PORT=\"\" BUILD_PATH='./docs' PUBLIC_URL=\"https://jogajook.github.io/jgame\" react-scripts build && mv build docs",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
