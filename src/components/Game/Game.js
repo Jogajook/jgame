@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames/bind';
 import './Game.scss';
 
+const getRandomItem = (items) => {
+  const randomIndex = Math.floor(Math.random() * items.length);
+  return items[randomIndex];
+};
+
 const keyCodes = {
   up: 38,
   down: 40,
@@ -14,10 +19,7 @@ const cellSize = 30;
 const gameTickMs = 10;
 
 const itemsCountX = parseInt((window.innerWidth - 250) / cellSize, 10);
-const itemsCountY = parseInt((window.innerHeight) / cellSize, 10);
-
-// const itemsCountX = 20;
-// const itemsCountY = 10;
+const itemsCountY = parseInt(window.innerHeight / cellSize, 10);
 
 const enemyConfig = {
   height: 2,
@@ -26,20 +28,47 @@ const enemyConfig = {
   movingSpaceDiv: 0.8,
   gapInRow: 1,
   gapInCol: 1,
-  moveSpeed: 700,
+  moveSpeed: 1500,
   // moveSpeed: 1000000,
   startFiringSpeed: 1500,
-  fireSpeed: 500,
+  fireSpeed: 300,
   images: [
-    `${process.env.PUBLIC_URL}/enemy.png`,
+    `${process.env.PUBLIC_URL}/enemy1.png`,
     `${process.env.PUBLIC_URL}/enemy2.png`,
     `${process.env.PUBLIC_URL}/enemy3.png`,
     `${process.env.PUBLIC_URL}/enemy4.png`,
     `${process.env.PUBLIC_URL}/enemy5.png`,
   ],
+  fireImages: [
+    `${process.env.PUBLIC_URL}/enemy-fire1.png`,
+    `${process.env.PUBLIC_URL}/enemy-fire2.png`,
+    `${process.env.PUBLIC_URL}/enemy-fire3.png`,
+    `${process.env.PUBLIC_URL}/enemy-fire4.png`,
+    `${process.env.PUBLIC_URL}/enemy-fire5.png`,
+  ],
 };
 
-const initEnemiesFn = () => {
+const craftConfig = {
+  width: 3,
+  height: 3,
+  fireSpeed: 200,
+  fireImages: [
+    `${process.env.PUBLIC_URL}/craft-fire1.png`,
+    `${process.env.PUBLIC_URL}/craft-fire2.png`,
+    `${process.env.PUBLIC_URL}/craft-fire3.png`,
+    `${process.env.PUBLIC_URL}/craft-fire4.png`,
+    `${process.env.PUBLIC_URL}/craft-fire5.png`,
+  ],
+};
+
+const initCraftConfigFn = (level) => {
+  return {
+    ...craftConfig,
+    fireSpeed: craftConfig.fireSpeed - 100 * (level - 1),
+  };
+};
+
+const initEnemiesFn = (rows) => {
   const movingSpace = itemsCountX * enemyConfig.movingSpaceDiv;
   const enemiesCountPerRow = parseInt(
     movingSpace / (enemyConfig.width + enemyConfig.gapInRow),
@@ -48,11 +77,8 @@ const initEnemiesFn = () => {
 
   let ens = [];
 
-  for (let row = 0; row < enemyConfig.rows; row++) {
-    const randomImgIndex = Math.floor(
-      Math.random() * enemyConfig.images.length
-    );
-    let image = enemyConfig.images[randomImgIndex];
+  for (let row = 0; row < rows; row++) {
+    let image = getRandomItem(enemyConfig.images);
     for (let indexInRow = 0; indexInRow < enemiesCountPerRow; indexInRow++) {
       const ensInRow = [];
       for (let x = 0; x < enemyConfig.width; x++) {
@@ -76,11 +102,43 @@ const initEnemiesFn = () => {
   return ens;
 };
 
-const craftConfig = {
-  fireSpeed: 10,
-  width: 3,
-  height: 3,
-	fireSpeed: 200,
+const initEnemiesConfigFn = (level) => {
+  const shouldAddRows = level % 2 === 0;
+  let newRows = enemyConfig.rows + (shouldAddRows ? level - 1 : 0);
+  if (newRows >= 4) {
+    newRows = 4;
+  }
+  return {
+    ...enemyConfig,
+    rows: newRows,
+    moveSpeed: enemyConfig.moveSpeed - 50 * (level - 1),
+    fireSpeed: enemyConfig.fireSpeed - 100 * (level - 1),
+    startFiringSpeed: enemyConfig.startFiringSpeed - 100 * (level - 1),
+  };
+};
+
+const bgs = [
+  `${process.env.PUBLIC_URL}/bg1.jpg`,
+  `${process.env.PUBLIC_URL}/bg2.jpg`,
+  `${process.env.PUBLIC_URL}/bg3.jpg`,
+  `${process.env.PUBLIC_URL}/bg4.jpg`,
+  `${process.env.PUBLIC_URL}/bg5.jpg`,
+  `${process.env.PUBLIC_URL}/bg6.jpg`,
+  `${process.env.PUBLIC_URL}/bg7.jpg`,
+  `${process.env.PUBLIC_URL}/bg8.jpg`,
+  `${process.env.PUBLIC_URL}/bg9.jpg`,
+  `${process.env.PUBLIC_URL}/bg10.jpg`,
+  `${process.env.PUBLIC_URL}/bg11.jpg`,
+];
+
+const initConfigFn = (level) => {
+  return {
+    enemyConfig: initEnemiesConfigFn(level),
+    craftConfig: initCraftConfigFn(level),
+    enemyFireImage: getRandomItem(enemyConfig.fireImages),
+    craftFireImage: getRandomItem(craftConfig.fireImages),
+    bgImage: getRandomItem(bgs),
+  };
 };
 
 const initCraftFn = () => {
@@ -99,12 +157,16 @@ function Game() {
   const [enemiesFires, setEnemiesFires] = useState([]);
   const [craftImgCoords, setCraftImgCoords] = useState({ x: -100, y: -100 });
   const [craftImgUrl, setCraftImgUrl] = useState('');
+  const [level, setLevel] = useState(() => {
+    const l = parseInt(localStorage.getItem('level'), 10);
+    return isNaN(l) ? 1 : l;
+  });
+  const [gameConfig, setGameConfig] = useState(initConfigFn(level));
 
   const [craftCoords, setCraftCoords] = useState([]);
 
   const [enemies, setEnemies] = useState([]);
   const [initialEnemiesCount, setInitialEnemiesCount] = useState(0);
-
 
   const enemiesRef = useRef(enemies);
   enemiesRef.current = enemies;
@@ -125,16 +187,41 @@ function Game() {
 
   const [isEnemiesMoveLeft, setIsEnemiesMoveLeft] = useState(true);
 
-  const startGame = useCallback(() => {
+  const startGame = useCallback((gameLevel = 1) => {
+    const gConfig = initConfigFn(gameLevel);
     setCraftCoords(initCraftFn());
-		const ens = initEnemiesFn();
+    const ens = initEnemiesFn(gConfig.enemyConfig.rows);
     setEnemies(ens);
-		setInitialEnemiesCount(ens.length);
+    setInitialEnemiesCount(ens.length);
     setEnemiesFires([]);
     setCraftFires([]);
     setGameState('inProgress');
     setCraftImgUrl(`${process.env.PUBLIC_URL}/craft.png`);
+    setGameConfig(gConfig);
   }, []);
+
+  const goToNextLevel = useCallback(() => {
+    const nextLevel = level + 1;
+    setLevel(nextLevel);
+    startGame(nextLevel);
+  }, [level, startGame]);
+
+  const startNewGame = useCallback(() => {
+    const nextLevel = 1;
+    setLevel(nextLevel);
+    startGame(nextLevel);
+  }, [startGame]);
+
+  useEffect(() => {
+    localStorage.setItem('level', level);
+		document.body.style.backgroundImage = `url(${gameConfig.bgImage})`;
+  }, [gameConfig.bgImage, level]);
+
+	useEffect(() => {
+		if (gameState === 'notStarted') {
+			document.body.style.backgroundImage = `url(${bgs[0]})`;
+		}
+	}, [gameState]);
 
   const stopBackgroundMusic = useCallback((isDefault) => {
     defaultAudioRef.current.pause();
@@ -159,26 +246,20 @@ function Game() {
   );
 
   const startFireAudio = useCallback((isEnemy) => {
-		if (isEnemy) {
-			enemyFireAudioRef.current.pause();
-			enemyFireAudioRef.current.currentTime = 0;
-			enemyFireAudioRef.current.play()
-			return;
-		}
-		craftFireAudioRef.current.pause();
-		craftFireAudioRef.current.currentTime = 0;
-		craftFireAudioRef.current.play()
+    if (isEnemy) {
+      enemyFireAudioRef.current.pause();
+      enemyFireAudioRef.current.currentTime = 0;
+      enemyFireAudioRef.current.play();
+      return;
+    }
+    craftFireAudioRef.current.pause();
+    craftFireAudioRef.current.currentTime = 0;
+    craftFireAudioRef.current.play();
   }, []);
 
   const startHitAudio = useCallback((isEnemy) => {
     hitAudioRef.current.play();
   }, []);
-
-  // useEffect(() => {
-  //   document.body.style.backgroundImage = `url(${process.env.PUBLIC_URL}/bg2.jpg)`;
-  //   document.body.style.backgroundSize = '100%';
-  //   // startGame();
-  // }, []);
 
   const isRightEnd = useCallback((x) => {
     return x === itemsCountX - 1;
@@ -247,7 +328,7 @@ function Game() {
   }, [craftCoords, isLeftEnd]);
 
   const craftFireStart = useCallback(() => {
-    const y = itemsCountY - craftConfig.height;
+    const y = itemsCountY - gameConfig.craftConfig.height;
     const minX = getMinCoord(craftCoords, true);
     const maxX = getMaxCoord(craftCoords, true);
     const x = getMiddleCoord(minX, maxX);
@@ -260,7 +341,7 @@ function Game() {
     ]);
     startFireAudio(false);
     // eslint-disable-next-line no-use-before-define
-  }, [craftCoords, startFireAudio]);
+  }, [craftCoords, gameConfig.craftConfig.height, startFireAudio]);
 
   const isCraftFire = useCallback(
     ({ x, y }) => {
@@ -362,7 +443,7 @@ function Game() {
             })
             .filter(Boolean)
         );
-      }, craftConfig.fireSpeed);
+      }, gameConfig.craftConfig.fireSpeed);
       return interval;
     };
     const int = craftFire();
@@ -372,7 +453,13 @@ function Game() {
         clearInterval(int);
       }
     };
-  }, [craftFires, intersects, intersectsAnyEnemy, isOutOfFieldY]);
+  }, [
+    craftFires,
+    gameConfig.craftConfig.fireSpeed,
+    intersects,
+    intersectsAnyEnemy,
+    isOutOfFieldY,
+  ]);
 
   useEffect(() => {
     if (gameState !== 'inProgress') {
@@ -417,11 +504,7 @@ function Game() {
         if (enemiesRef.current.length === 0) {
           return;
         }
-
-        const randomEnemyIndex = Math.floor(
-          Math.random() * enemiesRef.current.length
-        );
-        const randomEnemy = enemiesRef.current[randomEnemyIndex];
+        const randomEnemy = getRandomItem(enemiesRef.current);
         const firePoint = getEnemyStartingFirePoint(randomEnemy);
         if (firePoint) {
           setEnemiesFires((prevValue) => [...prevValue, firePoint]);
@@ -431,7 +514,7 @@ function Game() {
 
       const interval = setInterval(() => {
         startFiring();
-      }, enemyConfig.startFiringSpeed);
+      }, gameConfig.enemyConfig.startFiringSpeed);
 
       return interval;
     };
@@ -443,7 +526,12 @@ function Game() {
         clearInterval(int);
       }
     };
-  }, [gameState, intersectsAnyEnemy, startFireAudio]);
+  }, [
+    gameConfig.enemyConfig.startFiringSpeed,
+    gameState,
+    intersectsAnyEnemy,
+    startFireAudio,
+  ]);
 
   useEffect(() => {
     if (gameState !== 'inProgress') {
@@ -468,7 +556,7 @@ function Game() {
             })
             .filter(Boolean)
         );
-      }, enemyConfig.fireSpeed);
+      }, gameConfig.enemyConfig.fireSpeed);
       return interval;
     };
     const int = enemiesFire();
@@ -478,7 +566,12 @@ function Game() {
         clearInterval(int);
       }
     };
-  }, [isOutOfFieldY, enemiesFires, gameState]);
+  }, [
+    isOutOfFieldY,
+    enemiesFires,
+    gameState,
+    gameConfig.enemyConfig.fireSpeed,
+  ]);
 
   useEffect(() => {
     if (gameState !== 'inProgress') {
@@ -521,14 +614,14 @@ function Game() {
             return itemCopy.map((point) => {
               const pointCopy = { ...point };
               return {
-								...pointCopy,
+                ...pointCopy,
                 x: setX(pointCopy.x),
                 y: setY(pointCopy.y),
               };
             });
           });
         });
-      }, enemyConfig.moveSpeed);
+      }, gameConfig.enemyConfig.moveSpeed);
       return interval;
     };
     const int = moveEnemies();
@@ -543,6 +636,7 @@ function Game() {
     craftFires,
     enemies.length,
     enemies.moveSpeed,
+    gameConfig.enemyConfig.moveSpeed,
     gameState,
     isEnemiesMoveLeft,
     isLeftEnd,
@@ -557,20 +651,17 @@ function Game() {
 
     const gameTick = () => {
       const interval = setInterval(() => {
-
         const craftFiresToRemove = [];
-				let newEnemiesValue = enemies;
+        let newEnemiesValue = enemies;
 
         craftFires.forEach((cFire) => {
           // Craft fires enemies
           const intersectionEnemy = intersectsAnyEnemy(cFire, newEnemiesValue);
           if (intersectionEnemy) {
             craftFiresToRemove.push(cFire);
-						setEnemies((prevValue) => {
-							return prevValue.filter(
-								(item) => item !== intersectionEnemy
-							);
-						});
+            setEnemies((prevValue) => {
+              return prevValue.filter((item) => item !== intersectionEnemy);
+            });
             startHitAudio();
           }
           // Craft fires enemies' fire
@@ -656,7 +747,7 @@ function Game() {
       const minY = getMinCoord(craftCoords, false);
 
       const imgX = cellSize * minX + 'px';
-      const imgY = cellSize * (minY) + 'px';
+      const imgY = cellSize * minY + 'px';
 
       setCraftImgCoords({ x: imgX, y: imgY });
     };
@@ -700,18 +791,25 @@ function Game() {
         return `url(${isEn[0].image})`;
       }
       if (isEnFire) {
-        return `url(${process.env.PUBLIC_URL}/carrot.png)`;
+        return `url(${gameConfig.enemyFireImage})`;
       }
       if (isCrFire) {
-        return `url(${process.env.PUBLIC_URL}/paut.png)`;
+        return `url(${gameConfig.craftFireImage})`;
       }
       return undefined;
     },
-    [isCraft, isCraftFire, isEnemyFire, isEnemyItem]
+    [
+      gameConfig.craftFireImage,
+      gameConfig.enemyFireImage,
+      isCraft,
+      isCraftFire,
+      isEnemyFire,
+      isEnemyItem,
+    ]
   );
 
-	const rows = useMemo(() => [...Array(itemsCountY).keys()], []);
-	const cols = useMemo(() => [...Array(itemsCountX).keys()], []);
+  const rows = useMemo(() => [...Array(itemsCountY).keys()], []);
+  const cols = useMemo(() => [...Array(itemsCountX).keys()], []);
 
   return (
     <div>
@@ -734,8 +832,11 @@ function Game() {
           <div className="modalBg">
             <div className="modal gameState--lost">
               <h4>You lost</h4>,
-              <button className="btn" onClick={startGame}>
-                Start Again
+              <button className="btn" onClick={() => startGame(level)}>
+                Restart
+              </button>
+              <button className="btn" onClick={() => startNewGame()}>
+                Start New Game
               </button>
             </div>
           </div>
@@ -745,8 +846,8 @@ function Game() {
           <div className="modalBg">
             <div className="modal gameState--won">
               <h4>You won!!!</h4>,
-              <button className="btn" onClick={startGame}>
-                Start Again
+              <button className="btn" onClick={goToNextLevel}>
+                Go To Next Level
               </button>
               <br />
               <button
@@ -763,10 +864,19 @@ function Game() {
           {gameState === 'notStarted' && (
             <div className="gameState--notStarted">
               <div>
-								<img className='gameCover' src={`${process.env.PUBLIC_URL}/game-cover.png`} alt='' />
-							</div> 
-							<button className="btn" onClick={startGame}>
-                Start Game
+                <img
+                  className="gameCover"
+                  src={`${process.env.PUBLIC_URL}/game-cover.png`}
+                  alt=""
+                />
+              </div>
+              {level !== 1 && (
+                <button className="btn" onClick={() => startGame(level)}>
+                  Continue Game
+                </button>
+              )}
+              <button className="btn" onClick={() => startNewGame()}>
+                Start New Game
               </button>
             </div>
           )}
@@ -782,8 +892,8 @@ function Game() {
                   src={craftImgUrl}
                   alt=""
                   style={{
-                    width: `${cellSize * craftConfig.width}px`,
-                    height: `${cellSize * craftConfig.height}px`,
+                    width: `${cellSize * gameConfig.craftConfig.width}px`,
+                    height: `${cellSize * gameConfig.craftConfig.height}px`,
                     left: craftImgCoords.x,
                     top: craftImgCoords.y,
                   }}
@@ -801,7 +911,7 @@ function Game() {
                           }),
                         }}
                         className={classNames('game__col', {
-                          head: isCraft({ x: col, y: row }),
+                          craftPoint: isCraft({ x: col, y: row }),
                           craftFire: isCraftFire({ x: col, y: row }),
                           enemyPoint: isEnemyItem({ x: col, y: row }),
                           enemyFire: isEnemyFire({ x: col, y: row }),
@@ -820,7 +930,9 @@ function Game() {
               </div>
 
               <div className="dashboard">
-                <div className="dashboard__score">{ initialEnemiesCount - enemies.length }</div>
+                <div className="dashboard__score">
+                  {initialEnemiesCount - enemies.length}
+                </div>
                 {(gameState === 'inProgress' || gameState === 'paused') && (
                   <>
                     <button

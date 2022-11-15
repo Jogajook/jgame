@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "https://jogajook.github.io/jgame/static/css/main.8a2ee522.css",
-    "main.js": "https://jogajook.github.io/jgame/static/js/main.29435005.js",
+    "main.css": "https://jogajook.github.io/jgame/static/css/main.293da4d3.css",
+    "main.js": "https://jogajook.github.io/jgame/static/js/main.0e6b4a31.js",
     "static/js/787.8ac135ba.chunk.js": "https://jogajook.github.io/jgame/static/js/787.8ac135ba.chunk.js",
     "index.html": "https://jogajook.github.io/jgame/index.html",
-    "main.8a2ee522.css.map": "https://jogajook.github.io/jgame/static/css/main.8a2ee522.css.map",
-    "main.29435005.js.map": "https://jogajook.github.io/jgame/static/js/main.29435005.js.map",
+    "main.293da4d3.css.map": "https://jogajook.github.io/jgame/static/css/main.293da4d3.css.map",
+    "main.0e6b4a31.js.map": "https://jogajook.github.io/jgame/static/js/main.0e6b4a31.js.map",
     "787.8ac135ba.chunk.js.map": "https://jogajook.github.io/jgame/static/js/787.8ac135ba.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.8a2ee522.css",
-    "static/js/main.29435005.js"
+    "static/css/main.293da4d3.css",
+    "static/js/main.0e6b4a31.js"
   ]
 }
